@@ -7,98 +7,220 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { background: #0f172a; color: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; min-height: 100vh; }
-        .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); }
-        .btn-telegram { background: linear-gradient(135deg, #0088cc, #229ED9); color: white; border: none; font-weight: 600; }
-        .btn-telegram:hover { background: linear-gradient(135deg, #0077b3, #1e8dbf); color: white; }
-        .btn-sunset { background: linear-gradient(135deg, #f97316, #ea580c); color: white; font-weight: 600; border: none; }
-        .btn-sunset:hover { background: linear-gradient(135deg, #ea580c, #c2410c); color: white; }
-        .modal-content { background: #1e293b; color: #fff; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; }
+        :root {
+            --bg-gradient: linear-gradient(135deg, #1a1003 0%, #0d1117 50%, #1e1124 100%);
+            --card-bg: rgba(30, 32, 44, 0.75);
+            --border-glow: rgba(245, 158, 11, 0.25);
+            --sunset-orange: #f59e0b;
+            --sunset-pink: #ec4899;
+        }
+
+        body { 
+            background: var(--bg-gradient); 
+            color: #f8fafc; 
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+            min-height: 100vh; 
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .glass-card { 
+            background: var(--card-bg); 
+            backdrop-filter: blur(16px); 
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-glow); 
+            border-radius: 20px; 
+            box-shadow: 0 16px 40px 0 rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1); 
+        }
+
+        .btn-telegram { 
+            background: linear-gradient(135deg, #0088cc, #229ED9); 
+            color: white; 
+            border: none; 
+            font-weight: 600; 
+            box-shadow: 0 4px 15px rgba(0, 136, 204, 0.3);
+            transition: all 0.3s ease;
+        }
+        .btn-telegram:hover { 
+            background: linear-gradient(135deg, #0077b3, #1e8dbf); 
+            color: white; 
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(0, 136, 204, 0.4);
+        }
+
+        .btn-sunset { 
+            background: linear-gradient(135deg, #f59e0b, #ec4899); 
+            color: white; 
+            font-weight: 600; 
+            border: none; 
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+            transition: all 0.3s ease;
+        }
+        .btn-sunset:hover { 
+            background: linear-gradient(135deg, #d97706, #db2777); 
+            color: white; 
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+        }
+
+        /* Flow Indicator Badges */
+        .flow-steps {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+        .flow-step {
+            flex: 1;
+            text-align: center;
+            font-size: 0.75rem;
+            color: #64748b;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: relative;
+        }
+        .flow-step.active {
+            color: #f59e0b;
+        }
+        .flow-step.completed {
+            color: #10b981;
+        }
+
+        .form-control {
+            background: rgba(15, 23, 42, 0.6) !important;
+            border-color: rgba(255, 255, 255, 0.1) !important;
+            color: #fff !important;
+            border-radius: 12px;
+            padding: 12px 16px;
+        }
+        .form-control:focus {
+            border-color: #f59e0b !important;
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15) !important;
+        }
+
+        .modal-content { 
+            background: #161b22; 
+            color: #fff; 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            border-radius: 20px; 
+        }
+
+        .brand-footer {
+            font-size: 0.85rem;
+            background: linear-gradient(90deg, #f59e0b, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
     </style>
 </head>
-<body class="d-flex flex-column align-items-center justify-content-center py-4">
+<body class="py-4">
 
     <!-- Header & Telegram Button -->
     <div class="container text-center mb-4">
-        <h2 class="fw-bold text-warning"><i class="fa-solid fa-bolt me-2"></i>PhanthomXhub</h2>
-        <p class="text-secondary small">Enter mobile number to check scratch card status or redeem rewards instantly.</p>
-        <a href="https://t.me/+R4PWyXAwZL9kZjJl" target="_blank" class="btn btn-telegram rounded-pill px-4 py-2 mt-1">
-            <i class="fa-brands fa-telegram me-2"></i>Join PhanthomXhub Telegram
+        <div class="d-inline-flex align-items-center justify-content-center bg-warning bg-opacity-10 px-3 py-1 rounded-pill mb-2 border border-warning border-opacity-25">
+            <span class="badge bg-warning text-dark me-2">LIVE</span>
+            <span class="text-warning small fw-semibold">Auto Scratch & Instant Payout</span>
+        </div>
+        <h1 class="fw-bold text-white display-6 mb-1"><i class="fa-solid fa-bolt text-warning me-2"></i>PhanthomXhub</h1>
+        <p class="text-secondary small mb-3">Seamless verification and automated reward claim system.</p>
+        <a href="https://t.me/+R4PWyXAwZL9kZjJl" target="_blank" class="btn btn-telegram rounded-pill px-4 py-2 shadow-sm">
+            <i class="fa-brands fa-telegram me-2"></i>Join Official Telegram Channel
         </a>
     </div>
 
     <!-- Main Card -->
     <div class="container col-12 col-md-6 col-lg-5">
-        <div class="glass-card p-4">
+        <div class="glass-card p-4 p-md-4">
+
+            <!-- Interactive Flow Tracker -->
+            <div class="flow-steps">
+                <div class="flow-step active" id="indicator-1">1. Number</div>
+                <div class="flow-step" id="indicator-2">2. OTP</div>
+                <div class="flow-step" id="indicator-3">3. Claim / Status</div>
+            </div>
 
             <!-- Step 1: Mobile -->
             <div id="step-mobile">
-                <h5 class="fw-bold text-white mb-3"><i class="fa-solid fa-mobile-screen me-2 text-warning"></i>Login / Status Check</h5>
+                <h5 class="fw-bold text-white mb-3 d-flex align-items-center">
+                    <i class="fa-solid fa-mobile-screen text-warning me-2 fs-5"></i>Enter Mobile Number
+                </h5>
                 <div class="mb-3">
-                    <label class="form-label text-secondary small">Mobile Number</label>
-                    <input type="tel" id="input-phone" class="form-control bg-dark text-white border-secondary" placeholder="Enter 10-digit Mobile Number" maxlength="10">
+                    <label class="form-label text-secondary small">10-Digit Mobile Number</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-dark text-secondary border-secondary border-end-0 rounded-start-3">+91</span>
+                        <input type="tel" id="input-phone" class="form-control border-start-0 rounded-end-3" placeholder="Enter number" maxlength="10">
+                    </div>
                 </div>
-                <button onclick="handleSendOTP()" class="btn btn-sunset w-100 py-2 rounded-3">Get OTP</button>
+                <button onclick="handleSendOTP()" class="btn btn-sunset w-100 py-3 rounded-3 shadow">Get Secure OTP</button>
             </div>
 
             <!-- Step 2: OTP -->
             <div id="step-otp" style="display: none;">
-                <h5 class="fw-bold text-white mb-3"><i class="fa-solid fa-shield-halved me-2 text-warning"></i>Enter Verification Code</h5>
+                <h5 class="fw-bold text-white mb-3 d-flex align-items-center">
+                    <i class="fa-solid fa-shield-halved text-warning me-2 fs-5"></i>Verification Code
+                </h5>
                 <div class="mb-3">
-                    <label class="form-label text-secondary small">6-Digit OTP</label>
-                    <input type="text" id="input-otp" class="form-control bg-dark text-white border-secondary text-center fs-4" placeholder="------" maxlength="6">
+                    <label class="form-label text-secondary small">Enter 6-Digit OTP received on device</label>
+                    <input type="text" id="input-otp" class="form-control text-center fs-3 tracking-widest fw-bold" placeholder="• • • • • •" maxlength="6">
                 </div>
-                <button onclick="handleVerifyOTP()" class="btn btn-sunset w-100 py-2 rounded-3 mb-2">Verify & Submit</button>
-                <div class="d-flex justify-content-between">
-                    <button onclick="handleSendOTP()" class="btn btn-link text-warning p-0 text-decoration-none small">Resend OTP</button>
-                    <button onclick="resetFlow()" class="btn btn-link text-secondary p-0 text-decoration-none small">Cancel</button>
+                <button onclick="handleVerifyOTP()" class="btn btn-sunset w-100 py-3 rounded-3 mb-3 shadow">Verify & Check Status</button>
+                <div class="d-flex justify-content-between align-items-center">
+                    <button onclick="handleSendOTP()" class="btn btn-link text-warning p-0 text-decoration-none small fw-semibold">Resend OTP</button>
+                    <button onclick="resetFlow()" class="btn btn-link text-secondary p-0 text-decoration-none small">Change Number</button>
                 </div>
             </div>
 
             <!-- Step 3: Status Details / Claim Form -->
             <div id="step-status" style="display: none;">
-                <div id="claimed-view" style="display: none;" class="text-center">
-                    <div class="p-3 mb-3 bg-success bg-opacity-25 rounded-3 border border-success">
-                        <i class="fa-solid fa-circle-check fs-1 text-success mb-2"></i>
-                        <h5 class="fw-bold text-white">Reward Already Claimed!</h5>
-                        <p class="text-secondary small mb-0">Is account par scratch card rewards status update ho chuka hai.</p>
+                <div id="claimed-view" style="display: none;" class="text-center py-2">
+                    <div class="p-4 mb-3 bg-success bg-opacity-10 rounded-4 border border-success border-opacity-25">
+                        <div class="text-success display-5 mb-2"><i class="fa-solid fa-circle-check"></i></div>
+                        <h5 class="fw-bold text-white mb-1">Rewards Already Claimed</h5>
+                        <p class="text-secondary small mb-0">This account has already processed its reward payouts successfully.</p>
                     </div>
+                    <button onclick="resetFlow()" class="btn btn-outline-light w-100 py-2 rounded-3 mt-2">Check Another Number</button>
                 </div>
 
                 <div id="unclaimed-view" style="display: none;">
-                    <div class="p-3 mb-3 bg-warning bg-opacity-25 rounded-3 border border-warning text-center">
-                        <i class="fa-solid fa-gift fs-1 text-warning mb-2"></i>
-                        <h5 class="fw-bold text-white">Unclaimed Reward Available!</h5>
-                        <p class="text-secondary small mb-0">UPI ID enter karke instant reward redeem karein.</p>
+                    <div class="p-3 mb-3 bg-warning bg-opacity-10 rounded-4 border border-warning border-opacity-25 text-center">
+                        <div class="text-warning fs-1 mb-1"><i class="fa-solid fa-gift"></i></div>
+                        <h5 class="fw-bold text-white mb-1">Unclaimed Reward Found!</h5>
+                        <p class="text-secondary small mb-0">Submit your UPI ID to trigger instant automated payout.</p>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label text-secondary small">Enter UPI ID for Payout</label>
-                        <input type="text" id="input-upi" class="form-control bg-dark text-white border-secondary" placeholder="e.g. 9876543210@ybl">
+                        <label class="form-label text-secondary small">Target UPI ID for Payout</label>
+                        <input type="text" id="input-upi" class="form-control" placeholder="e.g. 9876543210@paytm">
                     </div>
-                    <button onclick="handleClaim()" class="btn btn-success w-100 py-2 rounded-3 fw-bold">Claim Now</button>
+                    <button onclick="handleClaim()" class="btn btn-success w-100 py-3 rounded-3 fw-bold shadow">Process Instant Claim</button>
                 </div>
             </div>
 
-            <div id="msg-box" class="mt-3 text-center small"></div>
+            <!-- Global Response Message -->
+            <div id="msg-box" class="mt-3 text-center small fw-semibold"></div>
         </div>
 
-        <div class="text-center mt-3 text-secondary small">
-            powered by OpenCampaign and made by Gagan Gupta
+        <!-- Custom Clean Attribution Footer -->
+        <div class="text-center mt-4">
+            <span class="brand-footer">made by Gagan Gupta</span>
         </div>
     </div>
 
     <!-- Telegram Join Popup Modal -->
     <div class="modal fade" id="telegramModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content p-3 text-center">
-                <div class="modal-body">
-                    <i class="fa-brands fa-telegram text-info display-2 mb-3"></i>
-                    <h4 class="fw-bold text-white mb-2">Join PhanthomXhub Telegram</h4>
-                    <p class="text-secondary small">Daily new loot deals, promotional offers, aur latest payment updates ke liye abhi humara official Telegram join karein!</p>
-                    <a href="https://t.me/+R4PWyXAwZL9kZjJl" target="_blank" class="btn btn-telegram rounded-pill px-4 py-2 w-100 mb-2">
+            <div class="modal-content p-4 text-center shadow-lg">
+                <div class="modal-body p-0">
+                    <div class="text-info fs-1 mb-3"><i class="fa-brands fa-telegram"></i></div>
+                    <h3 class="fw-bold text-white mb-2">Join PhanthomXhub</h3>
+                    <p class="text-secondary small mb-4">Don't miss out! Join our active Telegram channel for daily loot deals, script updates, and fast payout notifications.</p>
+                    <a href="https://t.me/+R4PWyXAwZL9kZjJl" target="_blank" class="btn btn-telegram rounded-pill px-4 py-3 w-100 mb-2 shadow">
                         <i class="fa-brands fa-telegram me-2"></i>Join Channel Now
                     </a>
-                    <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill w-100" data-bs-dismiss="modal">Continue to Portal</button>
+                    <button type="button" class="btn btn-link text-secondary text-decoration-none btn-sm mt-1" data-bs-dismiss="modal">Continue to Portal</button>
                 </div>
             </div>
         </div>
@@ -115,9 +237,18 @@
             }, 1500);
         });
 
+        function updateStepIndicator(step) {
+            document.getElementById('indicator-1').className = `flow-step ${step > 1 ? 'completed' : (step === 1 ? 'active' : '')}`;
+            document.getElementById('indicator-2').className = `flow-step ${step > 2 ? 'completed' : (step === 2 ? 'active' : '')}`;
+            document.getElementById('indicator-3').className = `flow-step ${step === 3 ? 'active' : ''}`;
+        }
+
         function showMsg(text, type = 'danger') {
             const box = document.getElementById('msg-box');
-            box.className = `mt-3 text-center small text-${type}`;
+            let colorClass = 'text-danger';
+            if(type === 'success') colorClass = 'text-success';
+            if(type === 'warning') colorClass = 'text-warning';
+            box.className = `mt-3 text-center small fw-semibold ${colorClass}`;
             box.innerText = text;
         }
 
@@ -138,7 +269,8 @@
                     sessionData.phone = phone;
                     document.getElementById('step-mobile').style.display = 'none';
                     document.getElementById('step-otp').style.display = 'block';
-                    showMsg('OTP sent successfully', 'success');
+                    updateStepIndicator(2);
+                    showMsg('OTP sent successfully to mobile!', 'success');
                 } else {
                     showMsg(data.detail || 'Failed to send OTP');
                 }
@@ -147,8 +279,8 @@
 
         async function handleVerifyOTP() {
             const otp = document.getElementById('input-otp').value.trim();
-            if (otp.length !== 6) return showMsg('Enter valid 6-digit OTP');
-            showMsg('Verifying OTP...', 'warning');
+            if (otp.length !== 6) return showMsg('Enter valid 6-digit OTP code');
+            showMsg('Verifying session & checking status...', 'warning');
 
             try {
                 const res = await fetch('/api/verify-otp', {
@@ -168,6 +300,7 @@
 
                     document.getElementById('step-otp').style.display = 'none';
                     document.getElementById('step-status').style.display = 'block';
+                    updateStepIndicator(3);
 
                     if (data.has_unclaimed) {
                         document.getElementById('unclaimed-view').style.display = 'block';
@@ -175,15 +308,15 @@
                     } else {
                         document.getElementById('claimed-view').style.display = 'block';
                     }
-                    showMsg('Login successful!', 'success');
-                } else { showMsg(data.detail || 'Invalid OTP'); }
-            } catch (err) { showMsg('Verification error'); }
+                    showMsg('Account verified successfully!', 'success');
+                } else { showMsg(data.detail || 'Invalid OTP code'); }
+            } catch (err) { showMsg('Verification error occurred'); }
         }
 
         async function handleClaim() {
             const upi = document.getElementById('input-upi').value.trim();
-            if (!upi.includes('@')) return showMsg('Enter a valid UPI ID');
-            showMsg('Processing payout claim...', 'warning');
+            if (!upi.includes('@')) return showMsg('Enter a valid UPI ID (e.g. name@paytm)');
+            showMsg('Processing automated payout claim...', 'warning');
 
             try {
                 const res = await fetch('/api/claim', {
@@ -199,15 +332,20 @@
                 });
                 const data = await res.json();
                 if (res.ok) {
-                    showMsg(`Payout Claim Status: ${data.status}`, 'success');
-                } else { showMsg(data.detail || 'Claim failed'); }
-            } catch (err) { showMsg('Claim request failed'); }
+                    showMsg(`Success! Payout Status: ${data.status}`, 'success');
+                } else { showMsg(data.detail || 'Claim execution failed'); }
+            } catch (err) { showMsg('Claim network request failed'); }
         }
 
         function resetFlow() {
             document.getElementById('step-otp').style.display = 'none';
             document.getElementById('step-status').style.display = 'none';
             document.getElementById('step-mobile').style.display = 'block';
+            document.getElementById('unclaimed-view').style.display = 'none';
+            document.getElementById('claimed-view').style.display = 'none';
+            document.getElementById('input-phone').value = '';
+            document.getElementById('input-otp').value = '';
+            updateStepIndicator(1);
             showMsg('');
         }
     </script>
