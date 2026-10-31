@@ -1,4 +1,4 @@
-import os, time, uuid, json, random, requests
+import os, time, uuid, json, requests
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -28,8 +28,10 @@ FIXED_LOCATION = {
     "state": "TELANGANA"
 }
 
-BASE_NEW = "https://api.new.farmrise.bayer.com"
-BASE_PUBLIC = "https://api.public.farmrise.bayer.com"
+# Cloudflare Worker Proxy URL
+PROXY_WORKER = "https://black-hat-5fe6.gaminggagan000.workers.dev"
+BASE_NEW = PROXY_WORKER
+BASE_PUBLIC = PROXY_WORKER
 APP_VERSION = "2.72.6"
 
 def get_headers(session_data, extra_headers=None):
@@ -91,10 +93,10 @@ def send_otp(req: SendOTPReq):
         acq_resp = requests.post(
             f"{BASE_PUBLIC}/v1/acquired_users",
             json={"deviceId": FIXED_DEVICE["id"], "languageId": "1", "termsAndConditionsId": "35", "userSourceBO": {"utmMedium": "organic", "utmSource": "google-play"}},
-            headers=h, timeout=10
+            headers=h, timeout=20
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Connection timeout: {str(e)}")
+        raise HTTPException(status_code=500, detail="Connection timeout while acquiring user")
 
     if acq_resp.status_code not in (200, 201):
         raise HTTPException(status_code=400, detail="Failed to acquire user")
@@ -106,7 +108,7 @@ def send_otp(req: SendOTPReq):
         r = requests.post(
             f"{BASE_NEW}/v1/challenge", 
             json={"phoneNumber": f"+91{req.phone}", "whatsappOTPConsent": True}, 
-            headers=h_otp, timeout=10
+            headers=h_otp, timeout=20
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail="OTP request timed out")
@@ -122,7 +124,7 @@ def verify_otp(req: VerifyOTPReq):
         r = requests.post(
             f"{BASE_NEW}/v1/verify_challenge", 
             json={"otp": req.otp, "phoneNumber": req.phone}, 
-            headers=h, timeout=10
+            headers=h, timeout=20
         )
     except Exception:
         raise HTTPException(status_code=500, detail="Verification request timed out")
@@ -136,7 +138,7 @@ def verify_otp(req: VerifyOTPReq):
         try:
             rew_resp = requests.get(
                 f"{BASE_NEW}/farmer_reward_service/v2/user/{reg_user_id}/rewards/unclaimed", 
-                headers=h_auth, timeout=10
+                headers=h_auth, timeout=20
             )
             rewards = rew_resp.json().get("data", []) if rew_resp.status_code == 200 else []
         except Exception:
@@ -158,7 +160,7 @@ def claim(req: ClaimRewardReq):
         requests.post(
             f"{BASE_NEW}/farmer_reward_service/v1/user/scratchcard/scratched", 
             json={"registeredUserId": req.registered_user_id, "rewardId": req.reward_id}, 
-            headers=h, timeout=10
+            headers=h, timeout=20
         )
         requests.put(
             f"{BASE_NEW}/farmer_reward_service/v1/users/{req.registered_user_id}/paymentAccounts", 
@@ -169,7 +171,7 @@ def claim(req: ClaimRewardReq):
                 "upiId": req.upi, 
                 "userId": req.registered_user_id
             }, 
-            headers=h, timeout=10
+            headers=h, timeout=20
         )
         payout_res = requests.post(
             f"{BASE_NEW}/farmer_reward_service/v1/reward/payments/payout", 
@@ -179,7 +181,7 @@ def claim(req: ClaimRewardReq):
                 "rewardEventId": req.reward_id, 
                 "upiId": req.upi
             }, 
-            headers=h, timeout=10
+            headers=h, timeout=20
         )
     except Exception:
         raise HTTPException(status_code=500, detail="Claim request timed out")
