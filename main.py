@@ -32,25 +32,6 @@ BASE_NEW = "https://api.new.farmrise.bayer.com"
 BASE_PUBLIC = "https://api.public.farmrise.bayer.com"
 APP_VERSION = "2.72.6"
 
-def get_auto_proxy():
-    """Automatically fetches a fresh active HTTP proxy to bypass IP blocks."""
-    try:
-        r = requests.get(
-            "https://api.proxyscrape.com/v2/?request=displayproxies&protocol=http&timeout=5000&country=IN&ssl=yes",
-            timeout=5
-        )
-        if r.status_code == 200:
-            proxies = [p.strip() for p in r.text.split("\r\n") if p.strip()]
-            if proxies:
-                chosen = random.choice(proxies)
-                return {
-                    "http": f"http://{chosen}",
-                    "https": f"http://{chosen}"
-                }
-    except Exception:
-        pass
-    return None
-
 def get_headers(session_data, extra_headers=None):
     dev = FIXED_DEVICE
     loc = FIXED_LOCATION
@@ -105,25 +86,30 @@ def read_root():
 @app.post("/api/send-otp")
 def send_otp(req: SendOTPReq):
     h = get_headers({})
-    proxy = get_auto_proxy()
     
-    acq_resp = requests.post(
-        f"{BASE_PUBLIC}/v1/acquired_users",
-        json={"deviceId": FIXED_DEVICE["id"], "languageId": "1", "termsAndConditionsId": "35", "userSourceBO": {"utmMedium": "organic", "utmSource": "google-play"}},
-        headers=h, proxies=proxy, timeout=15
-    )
+    try:
+        acq_resp = requests.post(
+            f"{BASE_PUBLIC}/v1/acquired_users",
+            json={"deviceId": FIXED_DEVICE["id"], "languageId": "1", "termsAndConditionsId": "35", "userSourceBO": {"utmMedium": "organic", "utmSource": "google-play"}},
+            headers=h, timeout=10
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Connection timeout: {str(e)}")
+
     if acq_resp.status_code not in (200, 201):
         raise HTTPException(status_code=400, detail="Failed to acquire user")
     
     acq_id = acq_resp.json()["data"]["acquiredUserId"]
     
     h_otp = get_headers({"acquired_user_id": acq_id})
-    proxy_otp = get_auto_proxy()
-    r = requests.post(
-        f"{BASE_NEW}/v1/challenge", 
-        json={"phoneNumber": f"+91{req.phone}", "whatsappOTPConsent": True}, 
-        headers=h_otp, proxies=proxy_otp, timeout=15
-    )
+    try:
+        r = requests.post(
+            f"{BASE_NEW}/v1/challenge", 
+            json={"phoneNumber": f"+91{req.phone}", "whatsappOTPConsent": True}, 
+            headers=h_otp, timeout=10
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="OTP request timed out")
     
     if r.status_code == 200:
         return {"success": True, "message": "OTP sent successfully", "acquired_user_id": acq_id}
@@ -132,12 +118,14 @@ def send_otp(req: SendOTPReq):
 @app.post("/api/verify-otp")
 def verify_otp(req: VerifyOTPReq):
     h = get_headers({"acquired_user_id": req.acquired_user_id})
-    proxy = get_auto_proxy()
-    r = requests.post(
-        f"{BASE_NEW}/v1/verify_challenge", 
-        json={"otp": req.otp, "phoneNumber": req.phone}, 
-        headers=h, proxies=proxy, timeout=15
-    )
+    try:
+        r = requests.post(
+            f"{BASE_NEW}/v1/verify_challenge", 
+            json={"otp": req.otp, "phoneNumber": req.phone}, 
+            headers=h, timeout=10
+        )
+    except Exception:
+        raise HTTPException(status_code=500, detail="Verification request timed out")
     
     if r.status_code in (200, 201):
         data = r.json()["data"]
@@ -145,12 +133,14 @@ def verify_otp(req: VerifyOTPReq):
         reg_user_id = data.get("registeredUserId")
         
         h_auth = get_headers({"security_token": sec_token, "registered_user_id": reg_user_id})
-        proxy_rew = get_auto_proxy()
-        rew_resp = requests.get(
-            f"{BASE_NEW}/farmer_reward_service/v2/user/{reg_user_id}/rewards/unclaimed", 
-            headers=h_auth, proxies=proxy_rew, timeout=15
-        )
-        rewards = rew_resp.json().get("data", []) if rew_resp.status_code == 200 else []
+        try:
+            rew_resp = requests.get(
+                f"{BASE_NEW}/farmer_reward_service/v2/user/{reg_user_id}/rewards/unclaimed", 
+                headers=h_auth, timeout=10
+            )
+            rewards = rew_resp.json().get("data", []) if rew_resp.status_code == 200 else []
+        except Exception:
+            rewards = []
         
         return {
             "success": True,
@@ -164,37 +154,35 @@ def verify_otp(req: VerifyOTPReq):
 @app.post("/api/claim")
 def claim(req: ClaimRewardReq):
     h = get_headers({"security_token": req.security_token, "registered_user_id": req.registered_user_id})
-    proxy = get_auto_proxy()
-    
-    requests.post(
-        f"{BASE_NEW}/farmer_reward_service/v1/user/scratchcard/scratched", 
-        json={"registeredUserId": req.registered_user_id, "rewardId": req.reward_id}, 
-        headers=h, proxies=proxy, timeout=15
-    )
-    
-    requests.put(
-        f"{BASE_NEW}/farmer_reward_service/v1/users/{req.registered_user_id}/paymentAccounts", 
-        json={
-            "mobileNumber": req.phone, 
-            "paymentMethod": "UPI", 
-            "paymentPlatform": "PHONEPE", 
-            "upiId": req.upi, 
-            "userId": req.registered_user_id
-        }, 
-        headers=h, proxies=proxy, timeout=15
-    )
-    
-    proxy_pay = get_auto_proxy()
-    payout_res = requests.post(
-        f"{BASE_NEW}/farmer_reward_service/v1/reward/payments/payout", 
-        json={
-            "paymentMethod": "UPI", 
-            "registeredUserId": req.registered_user_id, 
-            "rewardEventId": req.reward_id, 
-            "upiId": req.upi
-        }, 
-        headers=h, proxies=proxy_pay, timeout=15
-    )
+    try:
+        requests.post(
+            f"{BASE_NEW}/farmer_reward_service/v1/user/scratchcard/scratched", 
+            json={"registeredUserId": req.registered_user_id, "rewardId": req.reward_id}, 
+            headers=h, timeout=10
+        )
+        requests.put(
+            f"{BASE_NEW}/farmer_reward_service/v1/users/{req.registered_user_id}/paymentAccounts", 
+            json={
+                "mobileNumber": req.phone, 
+                "paymentMethod": "UPI", 
+                "paymentPlatform": "PHONEPE", 
+                "upiId": req.upi, 
+                "userId": req.registered_user_id
+            }, 
+            headers=h, timeout=10
+        )
+        payout_res = requests.post(
+            f"{BASE_NEW}/farmer_reward_service/v1/reward/payments/payout", 
+            json={
+                "paymentMethod": "UPI", 
+                "registeredUserId": req.registered_user_id, 
+                "rewardEventId": req.reward_id, 
+                "upiId": req.upi
+            }, 
+            headers=h, timeout=10
+        )
+    except Exception:
+        raise HTTPException(status_code=500, detail="Claim request timed out")
     
     if payout_res.status_code == 200:
         return {"success": True, "status": payout_res.json().get("data", {}).get("paymentStatus", "CLAIM_IN_PROCESS")}
