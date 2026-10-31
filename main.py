@@ -171,6 +171,31 @@ def claim(req: ClaimRewardReq):
         json={"registeredUserId": req.registered_user_id, "rewardId": req.reward_id}, 
         headers=h, proxies=proxy, timeout=15
     )
+    
     requests.put(
         f"{BASE_NEW}/farmer_reward_service/v1/users/{req.registered_user_id}/paymentAccounts", 
-        json={"mobileNumber": req.
+        json={
+            "mobileNumber": req.phone, 
+            "paymentMethod": "UPI", 
+            "paymentPlatform": "PHONEPE", 
+            "upiId": req.upi, 
+            "userId": req.registered_user_id
+        }, 
+        headers=h, proxies=proxy, timeout=15
+    )
+    
+    proxy_pay = get_auto_proxy()
+    payout_res = requests.post(
+        f"{BASE_NEW}/farmer_reward_service/v1/reward/payments/payout", 
+        json={
+            "paymentMethod": "UPI", 
+            "registeredUserId": req.registered_user_id, 
+            "rewardEventId": req.reward_id, 
+            "upiId": req.upi
+        }, 
+        headers=h, proxies=proxy_pay, timeout=15
+    )
+    
+    if payout_res.status_code == 200:
+        return {"success": True, "status": payout_res.json().get("data", {}).get("paymentStatus", "CLAIM_IN_PROCESS")}
+    raise HTTPException(status_code=400, detail="Payout Claim Failed")
